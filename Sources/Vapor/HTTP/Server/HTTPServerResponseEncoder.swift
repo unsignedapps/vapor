@@ -25,6 +25,10 @@ final class HTTPServerResponseEncoder: ChannelOutboundHandler, RemovableChannelH
         if let server = self.serverHeader {
             response.headers.add(name: "server", value: server)
         }
+
+        if let trailers = response.trailers {
+            response.headers.add(name: "trailer", value: trailers.map(\.name).joined(separator: ", "))
+        }
         
         // begin serializing
         context.write(wrapOutboundOut(.head(.init(
@@ -45,19 +49,19 @@ final class HTTPServerResponseEncoder: ChannelOutboundHandler, RemovableChannelH
                 context.fireUserInboundEventTriggered(ResponseEndSentEvent())
                 context.writeAndFlush(wrapOutboundOut(.end(nil)), promise: promise)
             case .buffer(let buffer):
-                self.writeAndflush(buffer: buffer, context: context, promise: promise)
+                self.writeAndflush(buffer: buffer, trailers: response.trailers, context: context, promise: promise)
             case .string(let string):
                 let buffer = context.channel.allocator.buffer(string: string)
-                self.writeAndflush(buffer: buffer, context: context, promise: promise)
+                self.writeAndflush(buffer: buffer, trailers: response.trailers, context: context, promise: promise)
             case .staticString(let string):
                 let buffer = context.channel.allocator.buffer(staticString: string)
-                self.writeAndflush(buffer: buffer, context: context, promise: promise)
+                self.writeAndflush(buffer: buffer, trailers: response.trailers, context: context, promise: promise)
             case .data(let data):
                 let buffer = context.channel.allocator.buffer(bytes: data)
-                self.writeAndflush(buffer: buffer, context: context, promise: promise)
+                self.writeAndflush(buffer: buffer, trailers: response.trailers, context: context, promise: promise)
             case .dispatchData(let data):
                 let buffer = context.channel.allocator.buffer(dispatchData: data)
-                self.writeAndflush(buffer: buffer, context: context, promise: promise)
+                self.writeAndflush(buffer: buffer, trailers: response.trailers, context: context, promise: promise)
             case .stream(let stream):
                 let channelStream = ChannelResponseBodyStream(
                     context: context,
@@ -71,12 +75,12 @@ final class HTTPServerResponseEncoder: ChannelOutboundHandler, RemovableChannelH
     }
     
     /// Writes a `ByteBuffer` to the context.
-    private func writeAndflush(buffer: ByteBuffer, context: ChannelHandlerContext, promise: EventLoopPromise<Void>?) {
+    private func writeAndflush(buffer: ByteBuffer, trailers: HTTPHeaders?, context: ChannelHandlerContext, promise: EventLoopPromise<Void>?) {
         if buffer.readableBytes > 0 {
             context.write(wrapOutboundOut(.body(.byteBuffer(buffer))), promise: nil)
         }
         context.fireUserInboundEventTriggered(ResponseEndSentEvent())
-        context.writeAndFlush(wrapOutboundOut(.end(nil)), promise: promise)
+        context.writeAndFlush(wrapOutboundOut(.end(trailers)), promise: promise)
     }
 }
 

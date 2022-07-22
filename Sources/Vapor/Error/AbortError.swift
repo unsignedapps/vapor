@@ -17,12 +17,20 @@ public protocol AbortError: Error {
 
     /// Optional `HTTPHeaders` to add to the error response.
     var headers: HTTPHeaders { get }
+
+    /// Optional `HTTPHeaders` to add as trailers to the error response.
+    var trailers: HTTPHeaders? { get }
 }
 
 extension AbortError {
     /// See `AbortError`.
     public var headers: HTTPHeaders {
         [:]
+    }
+
+    /// See `AbortError`
+    public var trailers: HTTPHeaders? {
+        nil
     }
 
     /// See `AbortError`.

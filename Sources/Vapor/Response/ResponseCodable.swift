@@ -44,10 +44,18 @@ extension ResponseEncodable {
     ///     - status: `HTTPStatus` to set on the `Response`.
     ///     - headers: `HTTPHeaders` to merge into the `Response`'s headers.
     /// - returns: Newly encoded `Response`.
-    public func encodeResponse(status: HTTPStatus, headers: HTTPHeaders = [:], for request: Request) -> EventLoopFuture<Response> {
+    public func encodeResponse(status: HTTPStatus, headers: HTTPHeaders = [:], trailers: HTTPHeaders? = nil, for request: Request) -> EventLoopFuture<Response> {
         return self.encodeResponse(for: request).map { response in
             for (name, value) in headers {
                 response.headers.replaceOrAdd(name: name, value: value)
+            }
+            if let trailers = trailers {
+                if response.trailers == nil {
+                    response.trailers = [:]
+                }
+                for (name, value) in trailers {
+                    response.trailers?.replaceOrAdd(name: name, value: value)
+                }
             }
             response.status = status
             return response

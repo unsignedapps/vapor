@@ -21,6 +21,9 @@ public final class Response: CustomStringConvertible {
     /// The `"Content-Length"` and `"Transfer-Encoding"` headers will be set automatically
     /// when the `body` property is mutated.
     public var headers: HTTPHeaders
+
+    /// The trailer fields for this HTTP response, if any.
+    public var trailers: HTTPHeaders?
     
     /// The `Body`. Updating this property will also update the associated transport headers.
     ///
@@ -124,17 +127,20 @@ public final class Response: CustomStringConvertible {
     ///                The `"Content-Length"` and `"Transfer-Encoding"` headers will be set automatically.
     ///     - body: `Body` for this response, defaults to an empty body.
     ///             See `Response.Body` for more information.
+    ///     - trailers: Optional `HTTPHeaders` to include after the response body has been sent.
     public convenience init(
         status: HTTPResponseStatus = .ok,
         version: HTTPVersion = .init(major: 1, minor: 1),
         headers: HTTPHeaders = .init(),
-        body: Body = .empty
+        body: Body = .empty,
+        trailers: HTTPHeaders? = nil
     ) {
         self.init(
             status: status,
             version: version,
             headersNoUpdate: headers,
-            body: body
+            body: body,
+            trailers: trailers
         )
         self.headers.updateContentLength(body.count)
     }
@@ -145,12 +151,14 @@ public final class Response: CustomStringConvertible {
         status: HTTPResponseStatus,
         version: HTTPVersion,
         headersNoUpdate headers: HTTPHeaders,
-        body: Body
+        body: Body,
+        trailers: HTTPHeaders?
     ) {
         self.status = status
         self.version = version
         self.headers = headers
         self.body = body
+        self.trailers = trailers
         self.storage = .init()
         self.forHeadRequest = false
     }

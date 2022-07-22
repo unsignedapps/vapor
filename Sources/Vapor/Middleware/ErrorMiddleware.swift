@@ -20,6 +20,7 @@ public final class ErrorMiddleware: Middleware {
             let status: HTTPResponseStatus
             let reason: String
             let headers: HTTPHeaders
+            let trailers: HTTPHeaders?
 
             // inspect the error type
             switch error {
@@ -28,6 +29,7 @@ public final class ErrorMiddleware: Middleware {
                 reason = abort.reason
                 status = abort.status
                 headers = abort.headers
+                trailers = abort.trailers
             default:
                 // if not release mode, and error is debuggable, provide debug info
                 // otherwise, deliver a generic 500 to avoid exposing any sensitive error info
@@ -36,13 +38,14 @@ public final class ErrorMiddleware: Middleware {
                     : String(describing: error)
                 status = .internalServerError
                 headers = [:]
+                trailers = nil
             }
             
             // Report the error to logger.
             req.logger.report(error: error)
             
             // create a Response with appropriate status
-            let response = Response(status: status, headers: headers)
+            let response = Response(status: status, headers: headers, trailers: trailers)
             
             // attempt to serialize the error to json
             do {

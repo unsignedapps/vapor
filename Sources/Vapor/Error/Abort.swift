@@ -25,6 +25,9 @@ public struct Abort: AbortError, DebuggableError {
     /// See `AbortError`.
     public var headers: HTTPHeaders
 
+    /// See `AbortError`.
+    public var trailers: HTTPHeaders?
+
     /// See `AbortError`
     public var reason: String
 
@@ -38,6 +41,7 @@ public struct Abort: AbortError, DebuggableError {
     public init(
         _ status: HTTPResponseStatus,
         headers: HTTPHeaders = [:],
+        trailers: HTTPHeaders? = nil,
         reason: String? = nil,
         identifier: String? = nil,
         suggestedFixes: [String] = [],
@@ -50,6 +54,7 @@ public struct Abort: AbortError, DebuggableError {
     ) {
         self.identifier = identifier ?? status.code.description
         self.headers = headers
+        self.trailers = trailers
         self.status = status
         self.reason = reason ?? status.reasonPhrase
         self.source = ErrorSource(
